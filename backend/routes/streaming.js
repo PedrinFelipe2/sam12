@@ -113,10 +113,12 @@ router.get('/video-external/:userLogin/:folder/:filename', authMiddleware, async
             return res.status(403).json({ error: 'Acesso negado' });
         }
         
-        // Construir URL externa do Wowza
+        // Construir URL externa do Wowza com autenticação
         const isProduction = process.env.NODE_ENV === 'production';
         const wowzaHost = isProduction ? 'samhost.wcore.com.br' : '51.222.156.223';
-        const externalUrl = `http://${wowzaHost}:6980/content/${userLogin}/${folder}/${filename}`;
+        const wowzaUser = 'admin';
+        const wowzaPassword = 'FK38Ca2SuE6jvJXed97VMn';
+        const externalUrl = `http://${wowzaUser}:${wowzaPassword}@${wowzaHost}:6980/content/${userLogin}/${folder}/${filename}`;
         
         // Redirecionar para URL externa
         res.redirect(externalUrl);

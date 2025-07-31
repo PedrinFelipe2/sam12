@@ -88,13 +88,9 @@ const Playlists: React.FC = () => {
       return url;
     }
     
-    // Para arquivos locais, usar o proxy do backend
-    if (url.startsWith('/') || url.includes('content/')) {
-      const cleanPath = url.replace('/content', '').replace(/^\/+/, '');
-      return `/content/${cleanPath}`;
-    }
-    
-    return url;
+    // Para arquivos locais, sempre usar o proxy /content do backend
+    const cleanPath = url.replace(/^\/+/, ''); // Remove barras iniciais
+    return `/content/${cleanPath}`;
   };
 
   const carregarPlaylists = async () => {

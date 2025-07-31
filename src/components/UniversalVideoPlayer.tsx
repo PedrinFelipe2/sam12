@@ -90,18 +90,9 @@ const UniversalVideoPlayer: React.FC<UniversalVideoPlayerProps> = ({
       return src;
     }
     
-    // Para todos os arquivos locais, usar o proxy do backend
-    if (src.startsWith('/content')) {
-      return src; // Já está no formato correto
-    }
-    
-    if (src.startsWith('/') || src.includes('content/')) {
-      const cleanPath = src.startsWith('/content') ? src : `/content${src}`;
-      return cleanPath;
-    }
-    
-    // Para caminhos relativos, adicionar /content
-    return `/content/${src.replace(/^\/+/, '')}`;
+    // Para arquivos locais, sempre usar o proxy /content do backend
+    const cleanPath = src.replace(/^\/+/, ''); // Remove barras iniciais
+    return `/content/${cleanPath}`;
   };
 
   // Função para detectar tipo de arquivo

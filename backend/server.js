@@ -94,47 +94,82 @@
         res.setHeader('Cache-Control', 'public, max-age=3600');
       }
       
-      // Configurar URL do Wowza baseado no tipo de arquivo
+      // Configurar URL do Wowza com autenticação
       const fetch = require('node-fetch');
       const isProduction = process.env.NODE_ENV === 'production';
       const wowzaHost = isProduction ? 'samhost.wcore.com.br' : '51.222.156.223';
+      const wowzaUser = 'admin';
+      const wowzaPassword = 'FK38Ca2SuE6jvJXed97VMn';
       
       let wowzaUrl;
       if (isStreamFile) {
         // Para streams HLS/DASH - usar porta 1935
         wowzaUrl = `http://${wowzaHost}:1935${requestPath}`;
       } else {
-        // Para arquivos de vídeo - usar apenas porta 6980
-        wowzaUrl = `http://${wowzaHost}:6980/content${requestPath}`;
+        // Para arquivos de vídeo - usar porta 6980 com autenticação
+        // Formato correto: http://admin:senha@host:6980/content/path
+        wowzaUrl = `http://${wowzaUser}:${wowzaPassword}@${wowzaHost}:6980/content${requestPath}`;
       }
       
       console.log(`🔗 Redirecionando para: ${wowzaUrl}`);
       
       try {
-        // Fazer requisição única para a URL correta
+        // Preparar headers com autenticação básica
+        const authString = Buffer.from(`${wowzaUser}:${wowzaPassword}`).toString('base64');
+        const requestHeaders = {
+          'Range': req.headers.range || '',
+          'User-Agent': 'Streaming-System/1.0',
+          'Accept': '*/*',
+          'Authorization': `Basic ${authString}`
+        };
+        
+        // Fazer requisição para o Wowza
         const wowzaResponse = await fetch(wowzaUrl, {
           method: req.method,
-          headers: {
-            'Range': req.headers.range || '',
-            'User-Agent': 'Streaming-System/1.0',
-            'Accept': '*/*'
-          },
+          headers: requestHeaders,
           timeout: 10000 // 10 segundos timeout
         });
         
         if (!wowzaResponse.ok) {
-          console.log(`❌ Erro ao acessar vídeo (${wowzaResponse.status}): ${wowzaUrl}`);
+          console.log(`❌ Erro ao acessar vídeo (${wowzaResponse.status}): ${wowzaHost}:6980/content${requestPath}`);
+          
+          // Se for erro 401/403, tentar URL alternativa sem autenticação na URL
+          if (wowzaResponse.status === 401 || wowzaResponse.status === 403) {
+            console.log('🔄 Tentando URL alternativa sem autenticação na URL...');
+            
+            const alternativeUrl = `http://${wowzaHost}:6980/content${requestPath}`;
+            const alternativeResponse = await fetch(alternativeUrl, {
+              method: req.method,
+              headers: requestHeaders,
+              timeout: 10000
+            });
+            
+            if (alternativeResponse.ok) {
+              console.log(`✅ Sucesso com URL alternativa: ${alternativeUrl}`);
+              
+              // Copiar headers da resposta do Wowza
+              alternativeResponse.headers.forEach((value, key) => {
+                if (!res.headersSent) {
+                  res.setHeader(key, value);
+                }
+              });
+              
+              // Fazer pipe do stream
+              alternativeResponse.body.pipe(res);
+              return;
+            }
+          }
           
           return res.status(404).json({ 
             error: 'Vídeo não encontrado',
             details: 'O arquivo não foi encontrado no servidor de streaming',
             requestPath: requestPath,
-            wowzaUrl: wowzaUrl,
+            wowzaUrl: `${wowzaHost}:6980/content${requestPath}`,
             status: wowzaResponse.status
           });
         }
         
-        console.log(`✅ Servindo vídeo via Wowza: ${wowzaUrl}`);
+        console.log(`✅ Servindo vídeo via Wowza: ${wowzaHost}:6980/content${requestPath}`);
         
         // Copiar headers da resposta do Wowza
         wowzaResponse.headers.forEach((value, key) => {

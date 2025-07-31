@@ -117,14 +117,9 @@ function ModalVideo({
       return video.url;
     }
 
-    // Para arquivos locais, usar o proxy do backend
-    if (video.url.startsWith('/') || video.url.includes('content/')) {
-      const cleanPath = video.url.startsWith('/content') ? video.url : `/content${video.url}`;
-      return cleanPath;
-    }
-
-    // Retornar URL original se não conseguir processar
-    return video.url;
+    // Para arquivos locais, sempre usar o proxy /content do backend
+    const cleanPath = video.url.replace(/^\/+/, ''); // Remove barras iniciais
+    return `/content/${cleanPath}`;
   };
 
   const closePreview = () => {

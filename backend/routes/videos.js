@@ -88,17 +88,11 @@ router.get('/', authMiddleware, async (req, res) => {
     console.log(`📊 Encontrados ${rows.length} vídeos no banco`);
 
     const videos = rows.map(video => {
-      let url;
-      if (video.url.startsWith('http')) {
-        url = video.url;
-      } else {
-        // Construir URL correta para o vídeo
-        const fileName = video.nome;
-        // Garantir que a URL está no formato correto
-        const cleanPath = video.url.startsWith('/') ? video.url : `/${video.url}`;
-        url = `/content${cleanPath}`;
-        console.log(`🎥 Vídeo: ${fileName} -> URL: ${url}`);
-      }
+      // Garantir que a URL está no formato correto para o proxy
+      const cleanPath = video.url.replace(/^\/+/, ''); // Remove barras iniciais
+      const url = cleanPath;
+      console.log(`🎥 Vídeo: ${video.nome} -> URL: /content/${url}`);
+      
       return {
         id: video.id,
         nome: video.nome,
@@ -199,7 +193,7 @@ router.post('/upload', authMiddleware, upload.single('video'), async (req, res) 
     res.status(201).json({
       id: result.insertId,
       nome: videoTitle,
-      url: `/content${relativePath}`,
+      url: relativePath,
       duracao,
       tamanho
     });

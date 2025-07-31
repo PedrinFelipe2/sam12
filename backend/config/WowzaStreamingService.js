@@ -332,20 +332,13 @@ class WowzaStreamingService {
         // Detectar extensão do arquivo
         const fileExtension = fileName.split('.').pop().toLowerCase();
         
-        // Construir caminho baseado no tipo de arquivo
-        let streamPath;
-        if (fileExtension === 'mp4') {
-            streamPath = `${userLogin}/${folderName}/${fileName}`;
-        } else if (['avi', 'mov', 'wmv'].includes(fileExtension)) {
-            streamPath = `${userLogin}/${folderName}/${fileName}`;
-        } else {
-            streamPath = `${userLogin}/${folderName}/${fileName}`;
-        }
+        // Construir caminho correto para o Wowza
+        const streamPath = `${userLogin}/${folderName}/${fileName}`;
         
         return {
-            hlsUrl: `/content/${streamPath}`,
-            rtmpUrl: `/content/${streamPath}`,
-            directUrl: `/content/${streamPath}`
+            hlsUrl: `/${streamPath}`,
+            rtmpUrl: `/${streamPath}`,
+            directUrl: `/${streamPath}`
         };
     }
 
