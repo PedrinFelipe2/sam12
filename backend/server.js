@@ -46,7 +46,7 @@
   app.use('/content', async (req, res, next) => {
     try {
       // Extrair informações do caminho
-      const requestPath = req.path;
+      const requestPath = req.path.startsWith('/') ? req.path : `/${req.path}`;
       console.log(`📹 Solicitação de vídeo: ${requestPath}`);
       
       // Verificar se é um arquivo de vídeo ou playlist
@@ -108,7 +108,7 @@
       } else {
         // Para arquivos de vídeo - usar porta 6980 com autenticação
         // Formato correto: http://admin:senha@host:6980/content/path
-        wowzaUrl = `http://${wowzaUser}:${wowzaPassword}@${wowzaHost}:6980/content${requestPath}`;
+        wowzaUrl = `http://${wowzaUser}:${wowzaPassword}@${wowzaHost}:6980${requestPath}`;
       }
       
       console.log(`🔗 Redirecionando para: ${wowzaUrl}`);
@@ -137,7 +137,7 @@
           if (wowzaResponse.status === 401 || wowzaResponse.status === 403) {
             console.log('🔄 Tentando URL alternativa sem autenticação na URL...');
             
-            const alternativeUrl = `http://${wowzaHost}:6980/content${requestPath}`;
+            const alternativeUrl = `http://${wowzaHost}:6980${requestPath}`;
             const alternativeResponse = await fetch(alternativeUrl, {
               method: req.method,
               headers: requestHeaders,
